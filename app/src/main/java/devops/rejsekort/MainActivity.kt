@@ -40,4 +40,5 @@ fun GreetingPreview() {
     RejsekortTheme {
         Greeting("Android")
     }
+    
 }
