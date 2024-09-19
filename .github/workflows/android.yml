@@ -24,10 +24,3 @@ jobs:
 
     - name: Build APK with Gradle
       run: ./gradlew assembleRelease
-
-    # Optionally, upload the APK as an artifact
-    - name: Upload APK
-      uses: actions/upload-artifact@v3
-      with:
-        name: app-release.apk
-        path: app/build/outputs/apk/release/app-release.apk
