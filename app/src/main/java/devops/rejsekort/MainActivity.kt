@@ -1,4 +1,4 @@
-package devops.rejsekort.ui
+package devops.rejsekort
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
