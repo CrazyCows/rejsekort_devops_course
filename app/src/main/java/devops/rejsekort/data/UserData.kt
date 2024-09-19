@@ -1,4 +1,4 @@
-package devops.rejsekort.model
+package devops.rejsekort.data
 
 class UserData {
     val firstName: String
