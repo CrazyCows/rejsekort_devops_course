@@ -1,4 +1,4 @@
-package devops.rejsekort
+package devops.rejsekort.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,7 +10,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import devops.rejsekort.data.UserData
 import devops.rejsekort.ui.theme.RejsekortTheme
+import devops.rejsekort.ui.views.CheckInOutScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,26 +20,22 @@ class MainActivity : ComponentActivity() {
         setContent {
             RejsekortTheme {
                 // A surface container using the 'background' color from the theme
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Greeting("Android")
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    CheckInOutScreen(
+                        changeCheckInStatus = {},
+                        getUserData = {
+                            UserData(
+                                firstName = "Jens",
+                                lastName = "Hansen",
+                                isCheckedIn = false
+                            )
+                        }
+                    )
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    RejsekortTheme {
-        Greeting("Android")
     }
 }
