@@ -38,8 +38,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.DEVOPS_TOKEN }}
       with:
-        tag_name: a ${{ github.ref }}
-        release_name: Release a ${{ github.ref }}
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
         draft: false
         prerelease: false
 
