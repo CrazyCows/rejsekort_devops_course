@@ -39,7 +39,7 @@ fun CheckInOutScreen(
         Column(
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(40.dp)
+                .padding(10.dp)
         ) {
             Spacer(Modifier.height(40.dp))
             Text(
