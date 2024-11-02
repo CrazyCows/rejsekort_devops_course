@@ -11,7 +11,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -26,7 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import devops.rejsekort.viewModels.RejsekortViewmodel
 
-
+var appJustLaunched = true //TODO remove negation yk
 @Composable
 fun CheckInOutScreen(
     viewModel: RejsekortViewmodel = RejsekortViewmodel(),
@@ -36,17 +35,20 @@ fun CheckInOutScreen(
     val context = LocalContext.current
     val permissionHandled by viewModel.permissionHandled //Only keeps track of whether permission is handled in the current session
     val userData by viewModel.userData
-    //val userData = remember { getUserData() }
+    val checkedIn by viewModel.checkedIn
 
-    LaunchedEffect(permissionHandled) { //only runs if the system popup asking for permission runs
-        viewModel.handleCheckInOut(context)
+    LaunchedEffect(permissionHandled) { //only runs if the system popup asking for permission runs and on startup
+        if(!appJustLaunched){
+            viewModel.handleCheckInOut(context)
+        }
+        appJustLaunched = false
     }
 
     val requestPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
             onResult = { isGranted: Boolean ->
-                viewModel.onPermissionHandled()
+                viewModel.notifyPermissionHandled()
                 Log.i("requestPermissionLauncher",
                     if (isGranted) "Permission access granted" else "Permission access not granted")
             })
@@ -95,7 +97,7 @@ fun CheckInOutScreen(
             ) {
                 Text(
                     //text = if (userData.isCheckedIn) "Check Out" else "Check In",
-                    text = if (viewModel.checkedIn.value) "Check Out" else "Check In",
+                    text = if (checkedIn) "Check Out" else "Check In",
                     fontSize = 22.sp
                 )
             }

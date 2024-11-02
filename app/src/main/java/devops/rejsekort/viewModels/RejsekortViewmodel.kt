@@ -28,30 +28,37 @@ class RejsekortViewmodel : ViewModel() {
 
     private val _permissionHandled = mutableStateOf(false)
     val permissionHandled: State<Boolean> = _permissionHandled //Only keeps track of whether permission is handled in the current session
-    private var _checkedIn = mutableStateOf(false)
+    private var _checkedIn = mutableStateOf(isCheckedin())
     val checkedIn: State<Boolean> = _checkedIn
 
-    fun onPermissionHandled(){
-        _permissionHandled.value = true
+    fun notifyPermissionHandled(){
+        _permissionHandled.value = !_permissionHandled.value
+    }
+
+    private fun isCheckedin(): Boolean{
+        //TODO: Ask back end. This is useful if the app is restarted; We could also make it save on the phone but that seems pointless
+        return false
     }
     
     fun handleCheckInOut(context: Context){
-        if (permissionHandled.value){ //This prevents the initial run from throwing an exception (Because launchedeffect always runs at app start)
-            if(checkFineLocationAccess(context)){
-                CheckInOut(context)
-            } else {
-                //TODO: HANDLE
-                throw Exception("GIVE ME ACCESSSSSS")
-            }
+        if(checkFineLocationAccess(context)){
+            CheckInOut(context)
         } else {
-            //Intentionally left blank for being explicit. We do nothing here because its the first call
+            //_permissionHandled.value = false
+            Log.e("","Location access is required for the app to function")
+            Toast.makeText(context, "Location access is required for the app to function", Toast.LENGTH_LONG).show()
         }
-
     }
 
     private fun CheckInOut(context: Context){
-        _checkedIn.value = !_checkedIn.value
-        getFineLocation(context)
+        try{
+            getFineLocation(context)
+            _checkedIn.value = !_checkedIn.value
+        } catch (e: Exception){
+            Toast.makeText(context, "Failed to perform action", Toast.LENGTH_SHORT).show()
+        }
+
+
     }
     @SuppressLint("MissingPermission")
     private fun getFineLocation(context: Context) {
@@ -66,7 +73,6 @@ class RejsekortViewmodel : ViewModel() {
                 }
             }
             .addOnFailureListener { exception ->
-                // TODO: Handle location retrieval failure? I don't know if this ever happens. Still works if flight mode is on (Why does gps still work in flight mode?)
                 exception.printStackTrace()
                 throw exception
             }
