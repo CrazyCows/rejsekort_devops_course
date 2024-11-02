@@ -19,21 +19,16 @@ class RejsekortViewmodel : ViewModel() {
     private lateinit var location: Location
 
     private val _userData = mutableStateOf(UserData(
-        firstName = "First name placeholder",
-        lastName = "Last name placeholder"
+        firstName = "FN placeholder",
+        lastName = "LN placeholder"
         //TODO: Do we remove the checked in from the user data?
         )
     )
     val userData: State<UserData> = _userData
 
-    private val _permissionHandled = mutableStateOf(false)
-    val permissionHandled: State<Boolean> = _permissionHandled //Only keeps track of whether permission is handled in the current session
     private var _checkedIn = mutableStateOf(isCheckedin())
     val checkedIn: State<Boolean> = _checkedIn
 
-    fun notifyPermissionHandled(){
-        _permissionHandled.value = !_permissionHandled.value
-    }
 
     private fun isCheckedin(): Boolean{
         //TODO: Ask back end. This is useful if the app is restarted; We could also make it save on the phone but that seems pointless
@@ -44,9 +39,14 @@ class RejsekortViewmodel : ViewModel() {
         if(checkFineLocationAccess(context)){
             CheckInOut(context)
         } else {
-            //_permissionHandled.value = false
-            Log.e("","Location access is required for the app to function")
-            Toast.makeText(context, "Location access is required for the app to function", Toast.LENGTH_LONG).show()
+            if(checkCoarseLocationAccess(context)){
+                Log.e("","Fine location access is required for the app to function")
+                Toast.makeText(context, "Fine location access is required for the app to function", Toast.LENGTH_SHORT).show()
+            } else {
+                Log.e("","Location access is required for the app to function")
+                Toast.makeText(context, "Location access is required for the app to function", Toast.LENGTH_SHORT).show()
+            }
+
         }
     }
 
@@ -81,6 +81,10 @@ class RejsekortViewmodel : ViewModel() {
 
     fun checkFineLocationAccess(context: Context) : Boolean{
         return ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PERMISSION_GRANTED
+    }
+
+    fun checkCoarseLocationAccess(context: Context) : Boolean{
+        return ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PERMISSION_GRANTED
     }
 
     private fun sendLocationToBackend(){

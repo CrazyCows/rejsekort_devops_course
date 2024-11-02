@@ -20,12 +20,10 @@ import devops.rejsekort.data.UserData
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import devops.rejsekort.viewModels.RejsekortViewmodel
 
-var appJustLaunched = true //TODO remove negation yk
 @Composable
 fun CheckInOutScreen(
     viewModel: RejsekortViewmodel = RejsekortViewmodel(),
@@ -33,22 +31,16 @@ fun CheckInOutScreen(
 ) {
 
     val context = LocalContext.current
-    val permissionHandled by viewModel.permissionHandled //Only keeps track of whether permission is handled in the current session
     val userData by viewModel.userData
     val checkedIn by viewModel.checkedIn
 
-    LaunchedEffect(permissionHandled) { //only runs if the system popup asking for permission runs and on startup
-        if(!appJustLaunched){
-            viewModel.handleCheckInOut(context)
-        }
-        appJustLaunched = false
-    }
+
 
     val requestPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
             onResult = { isGranted: Boolean ->
-                viewModel.notifyPermissionHandled()
+                viewModel.handleCheckInOut(context)
                 Log.i("requestPermissionLauncher",
                     if (isGranted) "Permission access granted" else "Permission access not granted")
             })
@@ -87,7 +79,6 @@ fun CheckInOutScreen(
                         viewModel.handleCheckInOut(context)
                     } else {
                         requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
-                        //viewModel.CheckInOut(context) Automatically runs when the permission changes, so commented out here
                     }
                 },
                 modifier = Modifier
