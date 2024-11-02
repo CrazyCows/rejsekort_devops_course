@@ -18,12 +18,34 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import devops.rejsekort.data.UserData
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import devops.rejsekort.viewModels.RejsekortViewmodel
+
 
 @Composable
 fun CheckInOutScreen(
-    changeCheckInStatus: () -> Unit,
+    changeCheckInStatus: () -> Unit, //TODO: REMOVE(?)
+    viewModel: RejsekortViewmodel = RejsekortViewmodel(),
     getUserData: () -> UserData,
 ) {
+
+    val context = LocalContext.current
+    var location by remember { mutableStateOf("Your location") }
+
+    val requestPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { isGranted: Boolean ->
+                Log.i("requestPermissionLauncher",
+                    if (isGranted) "Permission access granted" else "Permission access not granted")
+            })
+
     val userData = remember { getUserData() }
     Box(
         modifier = Modifier
@@ -52,8 +74,18 @@ fun CheckInOutScreen(
             contentAlignment = Alignment.BottomCenter
         ) {
             Button(
-                onClick = {
-                    changeCheckInStatus()
+                onClick = { //TODO FIX HERE
+                    if(viewModel.hasFineLocationAccess(context)){
+                        viewModel.CheckInOut(context)
+
+                    } else {
+                        requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                        //nextline()
+                        viewModel.CheckInOut(context)
+                        if(viewModel.hasFineLocationAccess(context)){
+                            Log.e("Check in button", "Unhandled permission denial") //TODO: Handle this. How? Idk
+                        }
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth(0.75f)
@@ -72,9 +104,10 @@ fun CheckInOutScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun CheckInOutScreenPreview() {
+fun CheckInOutScreenPreview(viewModel: RejsekortViewmodel = RejsekortViewmodel()) {
     CheckInOutScreen(
-        changeCheckInStatus = {},
+        changeCheckInStatus = {Log.i("CheckInOutScreenPreview", "changeCheckInStatus clicked")},
+        viewModel = viewModel,
         getUserData = { UserData(
             firstName = "Jens",
             lastName = "Hansen",

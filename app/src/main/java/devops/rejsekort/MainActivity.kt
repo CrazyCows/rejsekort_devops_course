@@ -10,10 +10,12 @@ import androidx.compose.ui.Modifier
 import devops.rejsekort.data.UserData
 import devops.rejsekort.ui.theme.RejsekortTheme
 import devops.rejsekort.ui.views.CheckInOutScreen
+import devops.rejsekort.viewModels.RejsekortViewmodel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             RejsekortTheme {
                 // A surface container using the 'background' color from the theme
