@@ -12,11 +12,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import com.google.android.gms.location.LocationServices
+import devops.rejsekort.data.Event
+import devops.rejsekort.data.EventType
 import devops.rejsekort.data.UserData
 
 class RejsekortViewmodel : ViewModel() {
 
-    private lateinit var location: Location
+    private lateinit var lastLocation: Location
 
     private val _userData = mutableStateOf(UserData(
         firstName = "FN placeholder",
@@ -63,13 +65,13 @@ class RejsekortViewmodel : ViewModel() {
     @SuppressLint("MissingPermission")
     private fun getFineLocation(context: Context) {
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        fusedLocationClient.lastLocation //TODO: Check if warning this is an issue; Don't think it is within current logic beyond being an inherent race condition
+        fusedLocationClient.lastLocation //Check if warning this is an issue? Don't think it is within current logic beyond being an inherent race condition
             .addOnSuccessListener { loc ->
                 if (loc != null) {
-                    location = loc
-                    val toast = Toast.makeText(context, "Location is: " + location.latitude + ", " + location.longitude, Toast.LENGTH_SHORT) //TODO: Should probably be changed
+                    lastLocation = loc
+                    val toast = Toast.makeText(context, "Location is: " + lastLocation.latitude + ", " + lastLocation.longitude, Toast.LENGTH_SHORT) //Should probably be changed
                     toast.show()
-                    sendLocationToBackend()
+                    sendEventToBackend()
                 }
             }
             .addOnFailureListener { exception ->
@@ -87,8 +89,16 @@ class RejsekortViewmodel : ViewModel() {
         return ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PERMISSION_GRANTED
     }
 
-    private fun sendLocationToBackend(){
-        Log.w("RejsekortViewmodel", "Implement model/data layer please")
+    private fun sendEventToBackend(){
+        Log.e("RejsekortViewmodel", "Implement model/data layer please")
+        val event = Event(
+            eventType = EventType.CHECK_IN,
+            user = userData.value,
+            timestamp = (System.currentTimeMillis()/1000).toInt(),
+            location = lastLocation
+        )
+
+        //dataLayerFunctionOrAPICall(event) TODO
         //TODO: IMPLEMENT DATA LAYER? Or just send here for simplicity
     }
 }
