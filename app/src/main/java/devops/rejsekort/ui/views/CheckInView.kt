@@ -21,32 +21,37 @@ import devops.rejsekort.data.UserData
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import devops.rejsekort.viewModels.RejsekortViewmodel
 
 
 @Composable
 fun CheckInOutScreen(
-    changeCheckInStatus: () -> Unit, //TODO: REMOVE(?)
     viewModel: RejsekortViewmodel = RejsekortViewmodel(),
     getUserData: () -> UserData,
 ) {
 
     val context = LocalContext.current
-    var location by remember { mutableStateOf("Your location") }
+    val permissionHandled by viewModel.permissionHandled //Only keeps track of whether permission is handled in the current session
+    val userData by viewModel.userData
+    //val userData = remember { getUserData() }
+
+    LaunchedEffect(permissionHandled) { //only runs if the system popup asking for permission runs
+        viewModel.handleCheckInOut(context)
+    }
 
     val requestPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
             onResult = { isGranted: Boolean ->
+                viewModel.onPermissionHandled()
                 Log.i("requestPermissionLauncher",
                     if (isGranted) "Permission access granted" else "Permission access not granted")
             })
 
-    val userData = remember { getUserData() }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -73,18 +78,14 @@ fun CheckInOutScreen(
                 .padding(10.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
-            Button(
-                onClick = { //TODO FIX HERE
-                    if(viewModel.hasFineLocationAccess(context)){
-                        viewModel.CheckInOut(context)
 
+            Button(
+                onClick = {
+                    if(viewModel.checkFineLocationAccess(context)){ //we call this here to get the most up to date info, I dont think we can avoid the race condition
+                        viewModel.handleCheckInOut(context)
                     } else {
                         requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
-                        //nextline()
-                        viewModel.CheckInOut(context)
-                        if(viewModel.hasFineLocationAccess(context)){
-                            Log.e("Check in button", "Unhandled permission denial") //TODO: Handle this. How? Idk
-                        }
+                        //viewModel.CheckInOut(context) Automatically runs when the permission changes, so commented out here
                     }
                 },
                 modifier = Modifier
@@ -93,7 +94,8 @@ fun CheckInOutScreen(
                 colors = ButtonDefaults.buttonColors(),
             ) {
                 Text(
-                    text = if (userData.isCheckedIn) "Check Out" else "Check In",
+                    //text = if (userData.isCheckedIn) "Check Out" else "Check In",
+                    text = if (viewModel.checkedIn.value) "Check Out" else "Check In",
                     fontSize = 22.sp
                 )
             }
@@ -106,7 +108,6 @@ fun CheckInOutScreen(
 @Composable
 fun CheckInOutScreenPreview(viewModel: RejsekortViewmodel = RejsekortViewmodel()) {
     CheckInOutScreen(
-        changeCheckInStatus = {Log.i("CheckInOutScreenPreview", "changeCheckInStatus clicked")},
         viewModel = viewModel,
         getUserData = { UserData(
             firstName = "Jens",

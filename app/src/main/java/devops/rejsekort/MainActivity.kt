@@ -24,7 +24,6 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     CheckInOutScreen(
-                        changeCheckInStatus = {},
                         getUserData = {
                             UserData(
                                 firstName = "Jens",
