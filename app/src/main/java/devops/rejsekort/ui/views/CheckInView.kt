@@ -34,17 +34,11 @@ fun CheckInOutScreen(
     val userData by viewModel.userData
     val checkedIn by viewModel.checkedIn
 
-
-
     val requestPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
-            onResult = { isGranted: Boolean ->
-                viewModel.handleCheckInOut(context)
-                Log.i("requestPermissionLauncher",
-                    if (isGranted) "Permission access granted" else "Permission access not granted")
-            })
-
+            onResult = { viewModel.handleCheckInOut(context) }
+        )
 
     Box(
         modifier = Modifier
@@ -75,7 +69,7 @@ fun CheckInOutScreen(
 
             Button(
                 onClick = {
-                    if(viewModel.checkFineLocationAccess(context)){ //we call this here to get the most up to date info, I dont think we can avoid the race condition
+                    if(viewModel.checkFineLocationAccess(context)){
                         viewModel.handleCheckInOut(context)
                     } else {
                         requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
@@ -84,18 +78,16 @@ fun CheckInOutScreen(
                 modifier = Modifier
                     .fillMaxWidth(0.75f)
                     .height(75.dp),
-                colors = ButtonDefaults.buttonColors(),
+                colors = ButtonDefaults.buttonColors()
             ) {
                 Text(
-                    //text = if (userData.isCheckedIn) "Check Out" else "Check In",
-                    text = if (checkedIn) "Check Out" else "Check In",
+                    text = if (checkedIn) "Check ud" else "Check ind",
                     fontSize = 22.sp
                 )
             }
         }
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
