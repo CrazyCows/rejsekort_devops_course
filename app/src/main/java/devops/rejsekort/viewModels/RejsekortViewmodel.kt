@@ -5,16 +5,22 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.location.Location
+import android.service.controls.ControlsProviderService.TAG
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialResponse
 import androidx.lifecycle.ViewModel
 import com.google.android.gms.location.LocationServices
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import devops.rejsekort.data.Event
 import devops.rejsekort.data.EventType
 import devops.rejsekort.data.UserData
+
 
 class RejsekortViewmodel : ViewModel() {
 
@@ -29,6 +35,34 @@ class RejsekortViewmodel : ViewModel() {
         )
     )
     val userData: State<UserData> = _userData
+
+    fun handleSignIn(result: GetCredentialResponse, success: () -> Unit) {
+        // Handle the successfully returned credential.
+        val credential = result.credential
+
+        when (credential) {
+
+            is CustomCredential -> {
+                if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                    try {
+                        val googleIdTokenCredential = GoogleIdTokenCredential
+                            .createFrom(credential.data)
+                        // Send googleIdTokenCredential to your server for validation and authentication
+                        success()
+                    } catch (e: GoogleIdTokenParsingException) {
+                        Log.e(TAG, "Received an invalid google id token response", e)
+                    }
+                } else {
+                    // Catch any unrecognized custom credential type here.
+                    Log.e(TAG, "Unexpected type of credential")
+                }
+            }
+            else -> {
+                // Catch any unrecognized credential type here.
+                Log.e(TAG, "Unexpected type of credential")
+            }
+        }
+    }
 
 
     private fun isCheckedIn(): Boolean {
