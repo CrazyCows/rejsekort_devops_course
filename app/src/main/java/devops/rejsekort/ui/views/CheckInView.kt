@@ -11,20 +11,35 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import devops.rejsekort.data.UserData
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import devops.rejsekort.viewModels.RejsekortViewmodel
 
 @Composable
 fun CheckInOutScreen(
-    changeCheckInStatus: () -> Unit,
+    viewModel: RejsekortViewmodel = RejsekortViewmodel(),
     getUserData: () -> UserData,
 ) {
-    val userData = remember { getUserData() }
+
+    val context = LocalContext.current
+    val userData by viewModel.userData
+    val checkedIn by viewModel.checkedIn
+
+    val requestPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { viewModel.handleCheckInOut(context) }
+        )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -51,17 +66,22 @@ fun CheckInOutScreen(
                 .padding(10.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
+
             Button(
                 onClick = {
-                    changeCheckInStatus()
+                    if(viewModel.checkFineLocationAccess(context)){
+                        viewModel.handleCheckInOut(context)
+                    } else {
+                        requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth(0.75f)
                     .height(75.dp),
-                colors = ButtonDefaults.buttonColors(),
+                colors = ButtonDefaults.buttonColors()
             ) {
                 Text(
-                    text = if (userData.isCheckedIn) "Check Out" else "Check In",
+                    text = if (checkedIn) "Check ud" else "Check ind",
                     fontSize = 22.sp
                 )
             }
@@ -69,12 +89,11 @@ fun CheckInOutScreen(
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
-fun CheckInOutScreenPreview() {
+fun CheckInOutScreenPreview(viewModel: RejsekortViewmodel = RejsekortViewmodel()) {
     CheckInOutScreen(
-        changeCheckInStatus = {},
+        viewModel = viewModel,
         getUserData = { UserData(
             firstName = "Jens",
             lastName = "Hansen",
