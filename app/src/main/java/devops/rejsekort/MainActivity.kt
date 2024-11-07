@@ -7,10 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import devops.rejsekort.data.UserData
+import androidx.compose.ui.platform.LocalContext
 import devops.rejsekort.ui.theme.RejsekortTheme
-import devops.rejsekort.ui.views.CheckInOutScreen
-import devops.rejsekort.viewModels.RejsekortViewmodel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,15 +21,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    CheckInOutScreen(
-                        getUserData = {
-                            UserData(
-                                firstName = "Jens",
-                                lastName = "Hansen",
-                                isCheckedIn = false
-                            )
-                        }
-                    )
+                    RejsekortNavHost(context = LocalContext.current)
                 }
             }
         }
