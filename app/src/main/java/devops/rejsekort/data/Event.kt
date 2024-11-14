@@ -1,7 +1,6 @@
 package devops.rejsekort.data
 
 import android.location.Location
-import java.sql.Timestamp
 
 data class Event(
     val eventType: EventType,
