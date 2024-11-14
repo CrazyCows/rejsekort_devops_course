@@ -38,6 +38,7 @@ class RejsekortViewmodel : ViewModel() {
 
     fun handleCheckInOut(context: Context) {
         if (checkFineLocationAccess(context)) {
+
             checkInOut(context)
         } else { //Error message handling
             if (checkCoarseLocationAccess(context)) {
