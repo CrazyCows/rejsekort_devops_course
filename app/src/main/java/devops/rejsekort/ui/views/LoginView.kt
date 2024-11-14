@@ -12,14 +12,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import devops.rejsekort.viewModels.RejsekortViewmodel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
-    loginAction: () -> Unit,
+    viewModel: RejsekortViewmodel,
+    navigation: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -44,8 +49,13 @@ fun LoginScreen(
                     .padding(10.dp),
                 contentAlignment = Alignment.BottomCenter
             ) {
+                val context = LocalContext.current
                 Button(
-                    onClick = loginAction,
+                    onClick = {
+                        CoroutineScope(Dispatchers.Main).launch {
+                            viewModel.handleSignIn(context,navigation)
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth(0.75f)
                         .height(75.dp),
@@ -54,9 +64,4 @@ fun LoginScreen(
             }
         }
     }
-}
-@Preview
-@Composable
-fun LoginScreenPreview() {
-    LoginScreen(){}
 }

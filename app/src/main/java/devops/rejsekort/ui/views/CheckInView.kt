@@ -1,5 +1,7 @@
 package devops.rejsekort.ui.views
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -11,27 +13,23 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import devops.rejsekort.data.UserData
-import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import devops.rejsekort.viewModels.RejsekortViewmodel
 
 @Composable
 fun CheckInOutScreen(
-    viewModel: RejsekortViewmodel = RejsekortViewmodel(),
-    getUserData: () -> UserData,
+    viewModel: RejsekortViewmodel,
 ) {
 
     val context = LocalContext.current
-    val userData by viewModel.userData
+    val userData by viewModel.userData.collectAsStateWithLifecycle()
     val checkedIn by viewModel.checkedIn
 
     val requestPermissionLauncher =
@@ -52,11 +50,11 @@ fun CheckInOutScreen(
         ) {
             Spacer(Modifier.height(40.dp))
             Text(
-                text = userData.firstName,
+                text = userData.firstName.orEmpty(),
                 fontSize = 50.sp
             )
             Text(
-                text = userData.lastName,
+                text = userData.lastName.orEmpty(),
                 fontSize = 50.sp
             )
         }
@@ -94,10 +92,5 @@ fun CheckInOutScreen(
 fun CheckInOutScreenPreview(viewModel: RejsekortViewmodel = RejsekortViewmodel()) {
     CheckInOutScreen(
         viewModel = viewModel,
-        getUserData = { UserData(
-            firstName = "Jens",
-            lastName = "Hansen",
-            isCheckedIn = false
-        ) }
     )
 }

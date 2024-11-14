@@ -1,7 +1,8 @@
 package devops.rejsekort.data
 
 data class UserData (
-    val firstName: String = "",
-    val lastName: String = "",
+    val firstName: String? = "",
+    val lastName: String? = "",
     val isCheckedIn: Boolean = false,
+    val token: String = ""
 )

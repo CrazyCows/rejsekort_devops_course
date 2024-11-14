@@ -11,15 +11,22 @@ import android.widget.Toast
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
-import androidx.credentials.CustomCredential
-import androidx.credentials.GetCredentialResponse
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.ViewModel
 import com.google.android.gms.location.LocationServices
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import devops.rejsekort.data.Event
 import devops.rejsekort.data.EventType
 import devops.rejsekort.data.UserData
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import java.security.MessageDigest
+import java.util.UUID
 
 
 class RejsekortViewmodel : ViewModel() {
@@ -27,47 +34,81 @@ class RejsekortViewmodel : ViewModel() {
     private lateinit var lastLocation: Location
     private var _checkedIn = mutableStateOf(isCheckedIn())
     val checkedIn: State<Boolean> = _checkedIn
-    private val _userData = mutableStateOf(
-        UserData(
-            firstName = "FN placeholder",
-            lastName = "LN placeholder"
-            //TODO: Do we remove the checked in from the user data? Do we remove it entirely?
-        )
+    private val _userData = MutableStateFlow(
+        UserData()
     )
-    val userData: State<UserData> = _userData
-
-    fun handleSignIn(result: GetCredentialResponse, success: () -> Unit) {
-        // Handle the successfully returned credential.
-        val credential = result.credential
-
-        when (credential) {
-
-            is CustomCredential -> {
-                if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                    try {
-                        val googleIdTokenCredential = GoogleIdTokenCredential
-                            .createFrom(credential.data)
-                        // Send googleIdTokenCredential to your server for validation and authentication
-                        success()
-                    } catch (e: GoogleIdTokenParsingException) {
-                        Log.e(TAG, "Received an invalid google id token response", e)
-                    }
-                } else {
-                    // Catch any unrecognized custom credential type here.
-                    Log.e(TAG, "Unexpected type of credential")
-                }
-            }
-            else -> {
-                // Catch any unrecognized credential type here.
-                Log.e(TAG, "Unexpected type of credential")
-            }
-        }
-    }
+    val userData = _userData.asStateFlow()
 
 
     private fun isCheckedIn(): Boolean {
         //TODO: Ask back end. This is useful if the app is restarted; We could also make it save on the phone but that seems pointless
         return false
+    }
+
+    suspend fun handleSignIn(
+        context: Context,
+        navigation: () -> Unit
+    ) {
+        val credentialManager = CredentialManager.create(context)
+
+        val rawNonce = UUID.randomUUID().toString()
+        val bytes = rawNonce.toByteArray()
+        val md = MessageDigest.getInstance("SHA-256")
+        val digest = md.digest(bytes)
+        val hashedNonce = digest.fold("") { str, it -> str + "%02x".format(it) }
+
+        val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(false)
+            .setServerClientId("260729048541-br4tr166p0fsj1mhenohfhis2h5870r0.apps.googleusercontent.com")
+            .setNonce(hashedNonce)
+            .build()
+
+        val request: GetCredentialRequest = GetCredentialRequest.Builder()
+            .addCredentialOption(googleIdOption)
+            .build()
+
+        try {
+            val result = credentialManager.getCredential(
+                request = request,
+                context = context,
+            )
+            val credential = result.credential
+            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+            val googleIdToken = googleIdTokenCredential.idToken
+            setUserData(
+                firstName = googleIdTokenCredential.givenName,
+                lastName = googleIdTokenCredential.familyName,
+                userToken = googleIdToken
+            )
+            Log.i(TAG, googleIdToken)
+            Toast.makeText(context, "SUCCESS", Toast.LENGTH_LONG).show()
+            navigation()
+        } catch (e: GetCredentialException) {
+            Toast.makeText(
+                context,
+                e.message,
+                Toast.LENGTH_SHORT
+            ).show()
+        } catch (e: GoogleIdTokenParsingException) {
+            Toast.makeText(
+                context,
+                e.message,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+
+    fun setUserData(firstName: String?, lastName: String? ,userToken: String) {
+        _userData.update { c ->
+            c.copy(
+                firstName = firstName,
+                lastName = lastName,
+                token = userToken,
+                isCheckedIn = checkedIn.value
+            )
+
+        }
     }
 
     fun handleCheckInOut(context: Context) {
