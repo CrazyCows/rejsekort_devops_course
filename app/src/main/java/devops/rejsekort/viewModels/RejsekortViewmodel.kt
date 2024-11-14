@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.location.Location
-import android.service.controls.ControlsProviderService.TAG
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.State
@@ -80,8 +79,6 @@ class RejsekortViewmodel : ViewModel() {
                 lastName = googleIdTokenCredential.familyName,
                 userToken = googleIdToken
             )
-            Log.i(TAG, googleIdToken)
-            Toast.makeText(context, "SUCCESS", Toast.LENGTH_LONG).show()
             navigation()
         } catch (e: GetCredentialException) {
             Toast.makeText(
