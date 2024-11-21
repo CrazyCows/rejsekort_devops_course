@@ -1,44 +1,48 @@
 package devops.rejsekort.data
 
-import android.content.Context
-import com.google.gson.Gson
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
+import android.util.Log
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.android.Android
+import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.URLProtocol
+import io.ktor.http.path
 
 class CheckInOutRepository (
     val endpoint: String,
+
+
 ) {
-    suspend fun sendCheckIn(onSuccess: (Event) -> Unit,
-                            onError: (Exception) -> Unit) {
-        val url = URL(endpoint)
-        val openedConnection = url.openConnection() as HttpURLConnection
-        openedConnection.requestMethod = "GET"
-
-        val responseCode = openedConnection.responseCode
-        try {
-            val reader = BufferedReader(InputStreamReader(openedConnection.inputStream))
-            val response = reader.readText()
-            val apiResponse = Event(
-                parseJson<Event>(response)
-            )
-            print(response)
-            reader.close()
-            // Call the success callback on the main thread
-            onSuccess(apiResponse)
-        } catch (e: Exception) {
-            Log.d("Error", e.message.toString())
-            // Handle error cases and call the error callback on the main thread
-            launch(Dispatchers.Main) {
-                onError(Exception("HTTP Request failed with response code $responseCode"))
+    suspend fun sendCheckIn(location: Location) {
+        val jsonLocation = serialize(location)
+        val status = HttpClient(Android).use { client ->
+            client.post() {
+                url {
+                    protocol = URLProtocol.HTTPS
+                    host = endpoint
+                    path("docs/welcome.html")
+                    setBody(jsonLocation)
+                }
             }
-        } finally {
-
         }
+
     }
-    private inline fun <reified T>parseJson(text: String): T =
-        Gson().fromJson(text, T::class.java)
+    suspend fun getCheckInStatus() : Boolean {
+        val httpClient: HttpClient = HttpClient(Android)
+        val response: HttpResponse = httpClient.get(endpoint)
+
+        Log.i("get check in status", response.status.description)
+        httpClient.close()
+        return false
+    }
+    private fun serializeEvent(event: Location): String {
+        val json =  "{\"Location\":[\"latitude\": " + event.latitude +
+                "\",\"longitude\": \"" + event.longitude + "]}"
+
+        return json
+    }
 }
 
 

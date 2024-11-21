@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
-import android.location.Location
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.State
@@ -18,7 +17,6 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
-import devops.rejsekort.data.Event
 import devops.rejsekort.data.EventType
 import devops.rejsekort.data.UserData
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +28,7 @@ import java.util.UUID
 
 class RejsekortViewmodel : ViewModel() {
 
-    private lateinit var lastLocation: Location
+    private lateinit var lastLocation: android.location.Location
     private var _checkedIn = mutableStateOf(isCheckedIn())
     val checkedIn: State<Boolean> = _checkedIn
     private val _userData = MutableStateFlow(
@@ -178,7 +176,7 @@ class RejsekortViewmodel : ViewModel() {
 
     private fun sendEventToBackend() {
         Log.e("RejsekortViewmodel", "Implement model/data layer please")
-        val event = Event(
+        val event = devops.rejsekort.data.Location(
             eventType = EventType.CHECK_IN,
             user = userData.value,
             timestamp = (System.currentTimeMillis() / 1000).toInt(),
