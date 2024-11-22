@@ -17,7 +17,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
-import devops.rejsekort.data.EventType
+import devops.rejsekort.data.CheckInOutRepository
 import devops.rejsekort.data.UserData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,10 +26,10 @@ import java.security.MessageDigest
 import java.util.UUID
 
 
-class RejsekortViewmodel : ViewModel() {
-
+class RejsekortViewmodel: ViewModel() {
     private lateinit var lastLocation: android.location.Location
     private var _checkedIn = mutableStateOf(isCheckedIn())
+    private val repo = CheckInOutRepository()
     val checkedIn: State<Boolean> = _checkedIn
     private val _userData = MutableStateFlow(
         UserData()
@@ -94,7 +94,7 @@ class RejsekortViewmodel : ViewModel() {
     }
 
 
-    fun setUserData(firstName: String?, lastName: String? ,userToken: String) {
+    private fun setUserData(firstName: String?, lastName: String? ,userToken: String) {
         _userData.update { c ->
             c.copy(
                 firstName = firstName,
@@ -108,7 +108,6 @@ class RejsekortViewmodel : ViewModel() {
 
     fun handleCheckInOut(context: Context) {
         if (checkFineLocationAccess(context)) {
-
             checkInOut(context)
         } else { //Error message handling
             if (checkCoarseLocationAccess(context)) {
@@ -133,10 +132,10 @@ class RejsekortViewmodel : ViewModel() {
     private fun checkInOut(context: Context) {
         try {
             getFineLocation(context)
-            _checkedIn.value = !_checkedIn.value
         } catch (e: Exception) { //TODO: Handle different exceptions differently from Data Layer
             Toast.makeText(context, "Failed to perform action", Toast.LENGTH_SHORT).show()
         }
+        sendEventToBackend()
     }
 
     @SuppressLint("MissingPermission")
@@ -174,16 +173,19 @@ class RejsekortViewmodel : ViewModel() {
         ) == PERMISSION_GRANTED
     }
 
-    private fun sendEventToBackend() {
+    fun sendEventToBackend() {
         Log.e("RejsekortViewmodel", "Implement model/data layer please")
-        val event = devops.rejsekort.data.Location(
-            eventType = EventType.CHECK_IN,
-            user = userData.value,
-            timestamp = (System.currentTimeMillis() / 1000).toInt(),
-            location = lastLocation
+        val location = devops.rejsekort.data.Location(
+            latitude = lastLocation.latitude,
+            longitude = lastLocation.longitude,
         )
-
-        //dataLayerFunctionOrAPICall(event)
-        //TODO: IMPLEMENT DATA LAYER? Or just send here for simplicity
+        val success = repo.sendEvent(userData.value,location)
+        if (success){
+            _userData.update {c ->
+                c.copy(
+                    isCheckedIn = !userData.value.isCheckedIn
+                )
+            }
+        }
     }
 }
