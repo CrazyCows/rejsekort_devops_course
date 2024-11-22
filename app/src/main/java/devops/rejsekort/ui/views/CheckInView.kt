@@ -17,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,7 +30,6 @@ fun CheckInOutScreen(
     val context = LocalContext.current
     val userData by viewModel.userData.collectAsStateWithLifecycle()
     val checkedIn by viewModel.checkedIn
-
     val requestPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
@@ -68,7 +66,7 @@ fun CheckInOutScreen(
             Button(
                 onClick = {
                     if(viewModel.checkFineLocationAccess(context)){
-                        viewModel.handleCheckInOut(context)
+                        viewModel.sendEventToBackend()
                     } else {
                         requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
                     }
@@ -87,10 +85,3 @@ fun CheckInOutScreen(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun CheckInOutScreenPreview(viewModel: RejsekortViewmodel = RejsekortViewmodel()) {
-    CheckInOutScreen(
-        viewModel = viewModel,
-    )
-}
