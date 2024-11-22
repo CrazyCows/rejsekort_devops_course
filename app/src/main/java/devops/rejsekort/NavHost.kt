@@ -20,11 +20,7 @@ fun RejsekortNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = if (false) {
-            Screens.CHECKIN_SCREEN.name
-        } else {
-            Screens.LOGIN_SCREEN.name
-        }
+        startDestination = Screens.LOGIN_SCREEN.name
     ) {
         composable(Screens.CHECKIN_SCREEN.name) {
             CheckInOutScreen(
