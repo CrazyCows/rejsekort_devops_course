@@ -191,13 +191,7 @@ class RejsekortViewmodel: ViewModel() {
         )
         val success = repo.sendEvent(userData.value, loc)
         if (success) {
-            _userData.update { c ->
-                c.copy(
-                    isCheckedIn = !userData.value.isCheckedIn
-                )
-            }
+            isCheckedIn()
         }
-
-
     }
 }
