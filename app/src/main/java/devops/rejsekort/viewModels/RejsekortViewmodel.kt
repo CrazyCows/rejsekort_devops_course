@@ -6,40 +6,46 @@ import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.ViewModel
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.tasks.Tasks
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import devops.rejsekort.data.CheckInOutRepository
 import devops.rejsekort.data.UserData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.security.MessageDigest
 import java.util.UUID
 
 
 class RejsekortViewmodel: ViewModel() {
     private lateinit var lastLocation: android.location.Location
-    private var _checkedIn = mutableStateOf(isCheckedIn())
     private val repo = CheckInOutRepository()
-    val checkedIn: State<Boolean> = _checkedIn
     private val _userData = MutableStateFlow(
         UserData()
     )
     val userData = _userData.asStateFlow()
 
 
-    private fun isCheckedIn(): Boolean {
-        //TODO: Ask back end. This is useful if the app is restarted; We could also make it save on the phone but that seems pointless
-        return false
+    private fun isCheckedIn() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val newCheckInStatus = repo.getCheckInStatus(userData.value)
+            _userData.update { c ->
+                c.copy(
+                    isCheckedIn = newCheckInStatus
+                )
+            }
+        }
     }
 
     suspend fun handleSignIn(
@@ -56,6 +62,7 @@ class RejsekortViewmodel: ViewModel() {
 
         val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
+            .setAutoSelectEnabled(true)
             .setServerClientId("260729048541-br4tr166p0fsj1mhenohfhis2h5870r0.apps.googleusercontent.com")
             .setNonce(hashedNonce)
             .build()
@@ -78,6 +85,8 @@ class RejsekortViewmodel: ViewModel() {
                 userToken = googleIdToken
             )
             navigation()
+            //TODO: Get user check in status from Backend
+            //isCheckedIn()
         } catch (e: GetCredentialException) {
             Toast.makeText(
                 context,
@@ -100,9 +109,7 @@ class RejsekortViewmodel: ViewModel() {
                 firstName = firstName,
                 lastName = lastName,
                 token = userToken,
-                isCheckedIn = checkedIn.value
             )
-
         }
     }
 
@@ -135,7 +142,7 @@ class RejsekortViewmodel: ViewModel() {
         } catch (e: Exception) { //TODO: Handle different exceptions differently from Data Layer
             Toast.makeText(context, "Failed to perform action", Toast.LENGTH_SHORT).show()
         }
-        sendEventToBackend()
+        Log.i("CheckInOut", "CheckInOut done")
     }
 
     @SuppressLint("MissingPermission")
@@ -143,12 +150,13 @@ class RejsekortViewmodel: ViewModel() {
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
         fusedLocationClient.lastLocation //Don't think it is within current logic beyond being an inherent race condition
             .addOnSuccessListener { loc ->
+                Log.i("SUCCESS", loc.toString())
                 if (loc != null) {
                     lastLocation = loc
-                    sendEventToBackend()
                     Toast.makeText(
                         context,
-                        (if (isCheckedIn()) "Checked out at: " else "Checked out at: ") + lastLocation.latitude + ", " + lastLocation.longitude,
+                        (if (userData.value.isCheckedIn) "Checked out at: " else "Checked out at: ")
+                                + lastLocation.latitude + ", " + lastLocation.longitude,
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -173,19 +181,23 @@ class RejsekortViewmodel: ViewModel() {
         ) == PERMISSION_GRANTED
     }
 
-    fun sendEventToBackend() {
-        Log.e("RejsekortViewmodel", "Implement model/data layer please")
-        val location = devops.rejsekort.data.Location(
-            latitude = lastLocation.latitude,
-            longitude = lastLocation.longitude,
+    @SuppressLint("MissingPermission")
+    suspend fun sendEventToBackend(context: Context) {
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+        val location = Tasks.await(fusedLocationClient.lastLocation)
+        val loc = devops.rejsekort.data.Location(
+            latitude = location.latitude,
+            longitude = location.longitude,
         )
-        val success = repo.sendEvent(userData.value,location)
-        if (success){
-            _userData.update {c ->
+        val success = repo.sendEvent(userData.value, loc)
+        if (success) {
+            _userData.update { c ->
                 c.copy(
                     isCheckedIn = !userData.value.isCheckedIn
                 )
             }
         }
+
+
     }
 }

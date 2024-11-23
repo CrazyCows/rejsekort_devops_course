@@ -1,5 +1,7 @@
 package devops.rejsekort.ui.views
 
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -21,6 +23,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import devops.rejsekort.viewModels.RejsekortViewmodel
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun CheckInOutScreen(
@@ -29,7 +35,6 @@ fun CheckInOutScreen(
 
     val context = LocalContext.current
     val userData by viewModel.userData.collectAsStateWithLifecycle()
-    val checkedIn by viewModel.checkedIn
     val requestPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
@@ -46,7 +51,7 @@ fun CheckInOutScreen(
                 .align(Alignment.TopStart)
                 .padding(10.dp)
         ) {
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(100.dp))
             Text(
                 text = userData.firstName.orEmpty(),
                 fontSize = 50.sp
@@ -66,7 +71,16 @@ fun CheckInOutScreen(
             Button(
                 onClick = {
                     if(viewModel.checkFineLocationAccess(context)){
-                        viewModel.sendEventToBackend()
+                        viewModel.handleCheckInOut(context)
+                        val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
+                            Toast.makeText(
+                                context,"Unable to connect to server",Toast.LENGTH_SHORT
+                            ).show()
+                            throwable.printStackTrace()
+                        }
+                        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+                            viewModel.sendEventToBackend(context)
+                        }
                     } else {
                         requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
                     }
@@ -77,7 +91,7 @@ fun CheckInOutScreen(
                 colors = ButtonDefaults.buttonColors()
             ) {
                 Text(
-                    text = if (checkedIn) "Check ud" else "Check ind",
+                    text = if (userData.isCheckedIn) "Check ud" else "Check ind",
                     fontSize = 22.sp
                 )
             }
