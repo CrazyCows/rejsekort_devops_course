@@ -1,6 +1,6 @@
 package devops.rejsekort.ui.views
 
-import android.util.Log
+
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
