@@ -42,7 +42,7 @@ class CheckInOutRepository (
     suspend fun getCheckInStatus(userData: UserData) : Boolean {
         val status: HttpResponse = HttpClient(Android).get {
             url {
-                protocol = URLProtocol.HTTPS
+                protocol = URLProtocol.HTTP
                 host = endpoint
                 path("/Location/LocationSignedIn")
                 bearerAuth(userData.token)
