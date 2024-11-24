@@ -9,11 +9,13 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsBytes
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.URLProtocol
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.http.path
+import org.json.JSONObject
 
 class CheckInOutRepository (
     private val endpoint: String = "devops-course-hwhddqemcbgabha5.northeurope-01.azurewebsites.net",//"10.0.2.2:5001",
@@ -41,13 +43,15 @@ class CheckInOutRepository (
             }
         }
         Log.i("SendEvent", status.toString())
+        Log.i("SendEvent", userData.token)
+        Log.i("SendEvent", status.bodyAsText())
         if (status.status.isSuccess()) {
             return true
         }
         return false
     }
     suspend fun getCheckInStatus(userData: UserData) : Boolean {
-        val status: HttpResponse = client.get {
+        val status: HttpResponse = client.post {
             url {
                 protocol = URLProtocol.HTTPS
                 host = endpoint
@@ -62,7 +66,7 @@ class CheckInOutRepository (
         }
         return false
     }
-    suspend fun authorizeToken(token: String): Boolean {
+    suspend fun authorizeToken(token: String): String? {
         val json = "{\"IdToken\" : \"$token\"}"
         val status: HttpResponse = client.post {
             url {
@@ -73,8 +77,16 @@ class CheckInOutRepository (
                 setBody(json)
             }
         }
-        Log.i("AuthToken",status.toString())
-        return status.status.isSuccess()
+        Log.i("AuthToken", status.toString())
+        if (status.status.isSuccess()) {
+            // Extract token from the response
+            val responseBody = status.bodyAsText()
+            Log.i("AuthTokenBody", responseBody)
+            val jsonObject = JSONObject(responseBody)
+            return jsonObject.getString("token")
+        }
+        return null
+
     }
     private fun serializeEvent(loc: Location): String {
         val json =  "{\"Location\":[\"latitude\": " + loc.latitude +

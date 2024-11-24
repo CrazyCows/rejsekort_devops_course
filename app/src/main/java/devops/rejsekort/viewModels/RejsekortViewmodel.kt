@@ -79,14 +79,15 @@ class RejsekortViewmodel: ViewModel() {
             val credential = result.credential
             val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
             val googleIdToken = googleIdTokenCredential.idToken
-            setUserData(
-                firstName = googleIdTokenCredential.givenName,
-                lastName = googleIdTokenCredential.familyName,
-                userToken = googleIdToken
-            )
-            if (repo.authorizeToken(googleIdToken)) {
+            val backendIdToken = repo.authorizeToken(googleIdToken)
+            if (backendIdToken != null) {
                 navigation()
                 isCheckedIn()
+                setUserData(
+                    firstName = googleIdTokenCredential.givenName,
+                    lastName = googleIdTokenCredential.familyName,
+                    userToken = backendIdToken
+                )
             }else {
                 Toast.makeText(
                     context,
@@ -94,6 +95,8 @@ class RejsekortViewmodel: ViewModel() {
                     Toast.LENGTH_SHORT
                 ).show()
             }
+
+
         } catch (e: GetCredentialException) {
             Toast.makeText(
                 context,
