@@ -30,6 +30,9 @@ class CheckInOutRepository (
         }else {
             "SignInOnLocation"
         }
+        Log.i("CheckInOutRepository.sendEvent", "Currently trying to: " + pathEnd)
+        val client: HttpClient = HttpClient(Android) //TODO: Find out why this is a fix. The HttpClient was just randomly dying and stalling at the post request
+        //So for now we just make a new one every time even though it is less efficient
         val status = client.use { client ->
             client.post {
                 url {

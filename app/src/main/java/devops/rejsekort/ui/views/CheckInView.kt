@@ -35,7 +35,7 @@ fun CheckInOutScreen(
 ) {
 
     val context = LocalContext.current
-    val userData by viewModel.userData.collectAsStateWithLifecycle()
+    val userData by viewModel.userData2
     val requestPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
