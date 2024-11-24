@@ -62,11 +62,12 @@ fun CheckInOutScreen(
         if(isLoading){
             CircularProgressIndicator(
                 modifier = Modifier
-                    .width(64.dp)
+                    .width(256.dp)
                     .align(Alignment.Center)
                     .padding(10.dp),
                 color = MaterialTheme.colorScheme.secondary,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                strokeWidth = 16.dp
             )
         }
         Box(
