@@ -76,7 +76,7 @@ class CheckInOutRepository (
                 setBody(json)
             }
         }
-        Log.i("AuthToken", status.toString())
+        Log.i("AuthToken", status.toString()) //Error here is logged as 401 unauthorized
         if (status.status.isSuccess()) {
             // Extract token from the response
             val responseBody = status.bodyAsText()

@@ -63,7 +63,7 @@ class RejsekortViewmodel: ViewModel() {
         val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
             .setAutoSelectEnabled(true)
-            .setServerClientId("86674770041-ato8t6uf27is6rkdoplnntkr0uintoaq.apps.googleusercontent.com")
+            .setServerClientId("260729048541-br4tr166p0fsj1mhenohfhis2h5870r0.apps.googleusercontent.com")
             .setNonce(hashedNonce)
             .build()
 
