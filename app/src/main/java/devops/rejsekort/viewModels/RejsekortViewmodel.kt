@@ -1,7 +1,6 @@
 package devops.rejsekort.viewModels
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.util.Log
@@ -33,9 +32,7 @@ import java.util.UUID
 class RejsekortViewmodel: ViewModel() {
     private lateinit var lastLocation: devops.rejsekort.data.Location
     private val repo = CheckInOutRepository()
-    private val _userData = MutableStateFlow(
-        UserData()
-    )
+
     val userData2 = mutableStateOf(UserData())
 
 
@@ -115,19 +112,10 @@ class RejsekortViewmodel: ViewModel() {
 
     private fun setUserData(firstName: String?, lastName: String? ,userToken: String) {
         userData2.value = userData2.value.copy(firstName = firstName, lastName = lastName, token = userToken)
-
-        _userData.update { c ->
-            c.copy(
-                firstName = firstName,
-                lastName = lastName,
-                token = userToken,
-            )
-        }
     }
 
     fun handleCheckInOut(context: Context) {
-        if (checkFineLocationAccess(context)) { //TODO: prettify
-            //checkInOut(context)
+        if (checkFineLocationAccess(context)) {
             Log.i("handleCheckInOut", "I also need to run once per click with perimissions")
             val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
                 Toast.makeText(
@@ -138,45 +126,34 @@ class RejsekortViewmodel: ViewModel() {
             CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
                  val result = sendEventToBackend(context)
                 withContext(Dispatchers.Main){
-                    if (result) {
+                    if (result) { //I should not be legally allowed to concatenate strings like this
                         Toast.makeText(context, "Checked " + if(userData2.value.isCheckedIn) {"out"} else{"in"} + " at: " + lastLocation.latitude + ", " + lastLocation.longitude, Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
-        } else { //Error message handling
-            if (checkCoarseLocationAccess(context)) {
-                Log.e("", "Fine location access is required for the app to function")
-                Toast.makeText(
-                    context,
-                    "Fine location access is required for the app to function",
-                    Toast.LENGTH_SHORT
-                ).show()
-            } else {
-                Log.e("", "Location access is required for the app to function")
-                Toast.makeText(
-                    context,
-                    "Location access is required for the app to function",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
+        } else {
+            explainThatLocationIsNeeded(context)
         }
     }
 
-    @SuppressLint("MissingPermission")
-    private fun getFineLocation(context: Context) { //TODO: Remove? Is inside smth anyway
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        fusedLocationClient.lastLocation //Don't think it is within current logic beyond being an inherent race condition
-            .addOnSuccessListener { loc ->
-                if (loc != null) {
-
-                }
-            }
-            .addOnFailureListener { exception ->
-                exception.printStackTrace()
-                throw exception
-            }
+    private fun explainThatLocationIsNeeded(context: Context){  //Error message handling
+        if (checkCoarseLocationAccess(context)) {
+            Log.e("", "Fine location access is required for the app to function")
+            Toast.makeText(
+                context,
+                "Fine location access is required for the app to function",
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            Log.e("", "Location access is required for the app to function")
+            Toast.makeText(
+                context,
+                "Location access is required for the app to function",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     fun checkFineLocationAccess(context: Context): Boolean {
@@ -186,14 +163,14 @@ class RejsekortViewmodel: ViewModel() {
         ) == PERMISSION_GRANTED
     }
 
-    fun checkCoarseLocationAccess(context: Context): Boolean {
+    private fun checkCoarseLocationAccess(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PERMISSION_GRANTED
     }
 
-    suspend fun sendEventToBackend(context: Context) : Boolean{
+    private suspend fun sendEventToBackend(context: Context) : Boolean{
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
         try{
             val location = Tasks.await(fusedLocationClient.lastLocation)
@@ -209,8 +186,9 @@ class RejsekortViewmodel: ViewModel() {
                 return true
             }
         } catch(e: SecurityException){
-            //TODO: Implement this properly. Possibly remove the try catch and use the suggestion that is given
+            //TO-DO: Implement this properly. Possibly remove the try catch and use the suggestion that is given
             Log.e("Error", "User didnt give permission.")
+            explainThatLocationIsNeeded(context)
         }
         return false
     }
