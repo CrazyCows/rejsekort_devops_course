@@ -1,6 +1,7 @@
 package devops.rejsekort.ui.views
 
 
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -71,18 +72,10 @@ fun CheckInOutScreen(
             Button(
                 onClick = {
                     if(viewModel.checkFineLocationAccess(context)){
+                        Log.i("Button clicked", "I need to run once per click which has location permissions")
                         viewModel.handleCheckInOut(context)
-                        val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
-                            Toast.makeText(
-                                context,"Unable to connect to server",Toast.LENGTH_SHORT
-                            ).show()
-                            throwable.printStackTrace()
-                        }
-                        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-                            viewModel.sendEventToBackend(context)
-                        }
                     } else {
-                        requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                        requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION) //launches handleCheckInOut
                     }
                 },
                 modifier = Modifier

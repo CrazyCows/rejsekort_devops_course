@@ -18,12 +18,14 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import devops.rejsekort.data.CheckInOutRepository
 import devops.rejsekort.data.UserData
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.lang.Thread.sleep
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -63,7 +65,7 @@ class RejsekortViewmodel: ViewModel() {
         val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
             .setAutoSelectEnabled(true)
-            .setServerClientId("86674770041-ato8t6uf27is6rkdoplnntkr0uintoaq.apps.googleusercontent.com")
+            .setServerClientId("260729048541-br4tr166p0fsj1mhenohfhis2h5870r0.apps.googleusercontent.com")
             .setNonce(hashedNonce)
             .build()
 
@@ -127,7 +129,20 @@ class RejsekortViewmodel: ViewModel() {
 
     fun handleCheckInOut(context: Context) {
         if (checkFineLocationAccess(context)) {
-            checkInOut(context)
+            //checkInOut(context)
+            Log.i("handleCheckInOut", "I also need to run once per click with perimissions")
+
+
+            val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
+                Toast.makeText(
+                    context,"Unable to connect to server",Toast.LENGTH_SHORT
+                ).show()
+                throwable.printStackTrace()
+            }
+            CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+                sendEventToBackend(context)
+            }
+
         } else { //Error message handling
             if (checkCoarseLocationAccess(context)) {
                 Log.e("", "Fine location access is required for the app to function")
@@ -144,13 +159,16 @@ class RejsekortViewmodel: ViewModel() {
                     Toast.LENGTH_SHORT
                 ).show()
             }
-
         }
     }
 
     private fun checkInOut(context: Context) {
         try {
-            getFineLocation(context)
+            //getFineLocation(context)
+            CoroutineScope(Dispatchers.IO).launch {
+                sendEventToBackend(context)
+            }
+
         } catch (e: Exception) { //TODO: Handle different exceptions differently from Data Layer
             Toast.makeText(context, "Failed to perform action", Toast.LENGTH_SHORT).show()
         }
@@ -158,7 +176,7 @@ class RejsekortViewmodel: ViewModel() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun getFineLocation(context: Context) {
+    private fun getFineLocation(context: Context) { //TODO: Remove? Is inside smth anyway
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
         fusedLocationClient.lastLocation //Don't think it is within current logic beyond being an inherent race condition
             .addOnSuccessListener { loc ->
@@ -193,17 +211,22 @@ class RejsekortViewmodel: ViewModel() {
         ) == PERMISSION_GRANTED
     }
 
-    @SuppressLint("MissingPermission")
     suspend fun sendEventToBackend(context: Context) {
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        val location = Tasks.await(fusedLocationClient.lastLocation)
-        val loc = devops.rejsekort.data.Location(
-            latitude = location.latitude,
-            longitude = location.longitude,
-        )
-        val success = repo.sendEvent(userData.value, loc)
-        if (success) {
-            isCheckedIn()
+        try{
+            val location = Tasks.await(fusedLocationClient.lastLocation)
+            val loc = devops.rejsekort.data.Location(
+                latitude = location.latitude,
+                longitude = location.longitude,
+            )
+            val success = repo.sendEvent(userData.value, loc)
+            Log.w("Success?", success.toString())
+            if (success) {
+                isCheckedIn()
+            }
+        } catch(e: SecurityException){
+            //TODO: Implement this properly. Possibly remove the try catch and use the suggestion that is given
+            Log.e("Error", "User didnt give permission.")
         }
     }
 }
