@@ -1,11 +1,11 @@
 package devops.rejsekort.viewModels
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
@@ -21,31 +21,24 @@ import devops.rejsekort.data.UserData
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.security.MessageDigest
 import java.util.UUID
 
 
 class RejsekortViewmodel: ViewModel() {
-    private lateinit var lastLocation: android.location.Location
+    private lateinit var lastLocation: devops.rejsekort.data.Location
     private val repo = CheckInOutRepository()
-    private val _userData = MutableStateFlow(
-        UserData()
-    )
-    val userData = _userData.asStateFlow()
+
+    val userData2 = mutableStateOf(UserData())
+    val isLoading = mutableStateOf(false)
 
 
-    private fun isCheckedIn() {
+    private fun updateCheckedIn() {
         CoroutineScope(Dispatchers.IO).launch {
-            val newCheckInStatus = repo.getCheckInStatus(userData.value)
-            _userData.update { c ->
-                c.copy(
-                    isCheckedIn = newCheckInStatus
-                )
-            }
+            val newCheckInStatus = repo.getCheckInStatus(userData2.value)
+            userData2.value = userData2.value.copy(isCheckedIn = newCheckInStatus)
         }
     }
 
@@ -83,7 +76,7 @@ class RejsekortViewmodel: ViewModel() {
             val backendIdToken = repo.authorizeToken(googleIdToken)
             if (backendIdToken != null) {
                 navigation()
-                isCheckedIn()
+                updateCheckedIn()
                 setUserData(
                     firstName = googleIdTokenCredential.givenName,
                     lastName = googleIdTokenCredential.familyName,
@@ -117,80 +110,50 @@ class RejsekortViewmodel: ViewModel() {
 
 
     private fun setUserData(firstName: String?, lastName: String? ,userToken: String) {
-        _userData.update { c ->
-            c.copy(
-                firstName = firstName,
-                lastName = lastName,
-                token = userToken,
-            )
-        }
+        userData2.value = userData2.value.copy(firstName = firstName, lastName = lastName, token = userToken)
     }
 
     fun handleCheckInOut(context: Context) {
         if (checkFineLocationAccess(context)) {
-            checkInOut(context)
-        } else { //Error message handling
-            if (checkCoarseLocationAccess(context)) {
-                Log.e("", "Fine location access is required for the app to function")
+            val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
                 Toast.makeText(
-                    context,
-                    "Fine location access is required for the app to function",
-                    Toast.LENGTH_SHORT
+                    context,"Unable to connect to server",Toast.LENGTH_SHORT
                 ).show()
-            } else {
-                Log.e("", "Location access is required for the app to function")
-                Toast.makeText(
-                    context,
-                    "Location access is required for the app to function",
-                    Toast.LENGTH_SHORT
-                ).show()
+                throwable.printStackTrace()
             }
+            CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+                 val result = sendEventToBackend(context)
+                withContext(Dispatchers.Main){
 
-        }
-    }
-
-    fun userCheckInOut(context: Context){
-        //handleCheckInOut(context)//We have already checked for permissions, so skip this
-        val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
-            Toast.makeText(
-                context,"Unable to connect to server",Toast.LENGTH_SHORT
-            ).show()
-            throwable.printStackTrace()
-        }
-        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-            sendEventToBackend(context)
-        }
-    }
-
-    private fun checkInOut(context: Context) {
-        try {
-            getFineLocation(context)
-        } catch (e: Exception) { //TODO: Handle different exceptions differently from Data Layer
-            Toast.makeText(context, "Failed to perform action", Toast.LENGTH_SHORT).show()
-        }
-        Log.i("CheckInOut", "CheckInOut done")
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun getFineLocation(context: Context) {
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        fusedLocationClient.lastLocation //Don't think it is within current logic beyond being an inherent race condition
-            .addOnSuccessListener { loc ->
-                Log.i("SUCCESS", loc.toString())
-                if (loc != null) {
-                    lastLocation = loc
-                    Toast.makeText(
-                        context,
-                        (if (userData.value.isCheckedIn) "Checked out at: " else "Checked out at: ")
-                                + lastLocation.latitude + ", " + lastLocation.longitude,
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    if (result) { //I should not be legally allowed to concatenate strings like this
+                        Toast.makeText(context, "Checked " + if(userData2.value.isCheckedIn) {"out"} else{"in"} + " at: " + lastLocation.latitude + ", " + lastLocation.longitude, Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
+                    }
+                    isLoading.value = false
                 }
             }
-            .addOnFailureListener { exception ->
-                exception.printStackTrace()
-                throw exception
-            }
+        } else {
+            explainThatLocationIsNeeded(context)
+        }
+    }
+
+    private fun explainThatLocationIsNeeded(context: Context){  //Error message handling
+        if (checkCoarseLocationAccess(context)) {
+            Log.e("", "Fine location access is required for the app to function")
+            Toast.makeText(
+                context,
+                "Fine location access is required for the app to function",
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            Log.e("", "Location access is required for the app to function")
+            Toast.makeText(
+                context,
+                "Location access is required for the app to function",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     fun checkFineLocationAccess(context: Context): Boolean {
@@ -200,24 +163,33 @@ class RejsekortViewmodel: ViewModel() {
         ) == PERMISSION_GRANTED
     }
 
-    fun checkCoarseLocationAccess(context: Context): Boolean {
+    private fun checkCoarseLocationAccess(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PERMISSION_GRANTED
     }
 
-    @SuppressLint("MissingPermission")
-    suspend fun sendEventToBackend(context: Context) {
+    private suspend fun sendEventToBackend(context: Context) : Boolean{
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        val location = Tasks.await(fusedLocationClient.lastLocation)
-        val loc = devops.rejsekort.data.Location(
-            latitude = location.latitude,
-            longitude = location.longitude,
-        )
-        val success = repo.sendEvent(userData.value, loc)
-        if (success) {
-            isCheckedIn()
+        try{
+            val location = Tasks.await(fusedLocationClient.lastLocation)
+
+            val loc = devops.rejsekort.data.Location(
+                latitude = location.latitude,
+                longitude = location.longitude,
+            )
+            lastLocation = loc
+            val success = repo.sendEvent(userData2.value, lastLocation)
+            if (success) {
+                updateCheckedIn()
+                return true
+            }
+        } catch(e: SecurityException){
+            //TO-DO: Implement this properly. Possibly remove the try catch and use the suggestion that is given
+            Log.e("Error", "User didnt give permission.")
+            explainThatLocationIsNeeded(context)
         }
+        return false
     }
 }
