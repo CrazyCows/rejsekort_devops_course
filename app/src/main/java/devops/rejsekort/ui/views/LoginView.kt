@@ -64,7 +64,7 @@ fun LoginScreen(
                         .height(75.dp),
                     colors = ButtonDefaults.buttonColors()
                 ) {
-                    Text(text = (if(userData.isCheckedIn)"Check ud" else "Check ind"), fontSize = 30.sp)
+                    Text(text = "Sign in", fontSize = 30.sp)
                 }
             }
         }

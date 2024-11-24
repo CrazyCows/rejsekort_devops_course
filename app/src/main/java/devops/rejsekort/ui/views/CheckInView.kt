@@ -70,17 +70,8 @@ fun CheckInOutScreen(
 
             Button(
                 onClick = {
-                    if(viewModel.checkFineLocationAccess(context)){
-                        viewModel.handleCheckInOut(context)
-                        val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
-                            Toast.makeText(
-                                context,"Unable to connect to server",Toast.LENGTH_SHORT
-                            ).show()
-                            throwable.printStackTrace()
-                        }
-                        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-                            viewModel.sendEventToBackend(context)
-                        }
+                    if(viewModel.checkFineLocationAccess(context)){ //If we have access, go ahead
+                        viewModel.userCheckInOut(context)
                     } else {
                         requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
                     }

@@ -18,6 +18,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import devops.rejsekort.data.CheckInOutRepository
 import devops.rejsekort.data.UserData
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -145,6 +146,19 @@ class RejsekortViewmodel: ViewModel() {
                 ).show()
             }
 
+        }
+    }
+
+    fun userCheckInOut(context: Context){
+        //handleCheckInOut(context)//We have already checked for permissions, so skip this
+        val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
+            Toast.makeText(
+                context,"Unable to connect to server",Toast.LENGTH_SHORT
+            ).show()
+            throwable.printStackTrace()
+        }
+        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+            sendEventToBackend(context)
         }
     }
 
