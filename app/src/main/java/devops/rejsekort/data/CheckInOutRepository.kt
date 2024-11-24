@@ -56,8 +56,8 @@ class CheckInOutRepository (
                 protocol = URLProtocol.HTTPS
                 host = endpoint
                 path("Location/LocationSignedIn")
-                bearerAuth(userData.token)
             }
+            bearerAuth(userData.token)
         }
         Log.i("CheckInStatus",status.toString())
         if (status.status.isSuccess()) {
@@ -89,9 +89,12 @@ class CheckInOutRepository (
 
     }
     private fun serializeEvent(loc: Location): String {
-        val json =  "{\"Location\":[\"latitude\": " + loc.latitude +
-                "\",\"longitude\": \"" + loc.longitude + "]}"
-        return json
+        return """
+        {
+            "latitude": ${loc.latitude},
+            "longitude": ${loc.longitude}
+        }
+    """.trimIndent()
     }
 }
 
