@@ -9,12 +9,15 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsBytes
+import io.ktor.http.ContentType
 import io.ktor.http.URLProtocol
+import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.http.path
 
 class CheckInOutRepository (
     private val endpoint: String = "devops-course-hwhddqemcbgabha5.northeurope-01.azurewebsites.net",//"10.0.2.2:5001",
+    private val client: HttpClient = HttpClient(Android)
 
 
 ) {
@@ -24,40 +27,54 @@ class CheckInOutRepository (
             "SignOutOnLocation"
         }else {
             "SignInOnLocation"
-
         }
-        val status = HttpClient(Android).use { client ->
+        val status = client.use { client ->
             client.post {
                 url {
                     protocol = URLProtocol.HTTPS
                     host = endpoint
                     path("Location/" + pathEnd)
                     bearerAuth(userData.token)
+                    contentType(ContentType.Application.Json)
                     setBody(jsonLocation)
                 }
             }
         }
+        Log.i("SendEvent", status.toString())
         if (status.status.isSuccess()) {
-            Log.i("REPO", status.toString())
             return true
         }
-        Log.i("REPO", status.toString())
         return false
     }
     suspend fun getCheckInStatus(userData: UserData) : Boolean {
-        val status: HttpResponse = HttpClient(Android).get {
+        val status: HttpResponse = client.get {
             url {
                 protocol = URLProtocol.HTTPS
                 host = endpoint
-                path("/Location/LocationSignedIn")
+                path("Location/LocationSignedIn")
                 bearerAuth(userData.token)
             }
         }
+        Log.i("CheckInStatus",status.toString())
         if (status.status.isSuccess()) {
             //TODO: Confirm Data format of response
             return status.bodyAsBytes().toString().contains("true")
         }
         return false
+    }
+    suspend fun authorizeToken(token: String): Boolean {
+        val json = "{\"IdToken\" : \"$token\"}"
+        val status: HttpResponse = client.post {
+            url {
+                protocol = URLProtocol.HTTPS
+                host = endpoint
+                path("api/GoogleAuth/google-login")
+                contentType(ContentType.Application.Json)
+                setBody(json)
+            }
+        }
+        Log.i("AuthToken",status.toString())
+        return status.status.isSuccess()
     }
     private fun serializeEvent(loc: Location): String {
         val json =  "{\"Location\":[\"latitude\": " + loc.latitude +

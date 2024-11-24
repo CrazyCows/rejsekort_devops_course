@@ -84,8 +84,16 @@ class RejsekortViewmodel: ViewModel() {
                 lastName = googleIdTokenCredential.familyName,
                 userToken = googleIdToken
             )
-            navigation()
-            isCheckedIn()
+            if (repo.authorizeToken(googleIdToken)) {
+                navigation()
+                isCheckedIn()
+            }else {
+                Toast.makeText(
+                    context,
+                    "Failed to authenticate",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         } catch (e: GetCredentialException) {
             Toast.makeText(
                 context,
