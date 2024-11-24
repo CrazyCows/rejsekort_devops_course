@@ -14,17 +14,22 @@ import io.ktor.http.isSuccess
 import io.ktor.http.path
 
 class CheckInOutRepository (
-    private val endpoint: String = "10.0.2.2:5001",
+    private val endpoint: String = "devops-course-hwhddqemcbgabha5.northeurope-01.azurewebsites.net",//"10.0.2.2:5001",
 
 
 ) {
     suspend fun sendEvent(userData: UserData, location: Location): Boolean {
         val jsonLocation = serializeEvent(location)
-        val pathEnd = {if (userData.isCheckedIn) "SignOutOnLocation" else "SignInOnLocation"}
+        val pathEnd = if (userData.isCheckedIn) {
+            "SignOutOnLocation"
+        }else {
+            "SignInOnLocation"
+
+        }
         val status = HttpClient(Android).use { client ->
             client.post {
                 url {
-                    protocol = URLProtocol.HTTP
+                    protocol = URLProtocol.HTTPS
                     host = endpoint
                     path("Location/" + pathEnd)
                     bearerAuth(userData.token)
@@ -42,7 +47,7 @@ class CheckInOutRepository (
     suspend fun getCheckInStatus(userData: UserData) : Boolean {
         val status: HttpResponse = HttpClient(Android).get {
             url {
-                protocol = URLProtocol.HTTP
+                protocol = URLProtocol.HTTPS
                 host = endpoint
                 path("/Location/LocationSignedIn")
                 bearerAuth(userData.token)

@@ -85,8 +85,7 @@ class RejsekortViewmodel: ViewModel() {
                 userToken = googleIdToken
             )
             navigation()
-            //TODO: Get user check in status from Backend
-            //isCheckedIn()
+            isCheckedIn()
         } catch (e: GetCredentialException) {
             Toast.makeText(
                 context,
