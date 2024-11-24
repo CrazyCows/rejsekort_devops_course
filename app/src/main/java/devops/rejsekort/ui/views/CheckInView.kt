@@ -1,7 +1,6 @@
 package devops.rejsekort.ui.views
 
 
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -24,12 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import devops.rejsekort.viewModels.RejsekortViewmodel
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 @Composable
 fun CheckInOutScreen(
@@ -37,7 +31,7 @@ fun CheckInOutScreen(
 ) {
 
     val context = LocalContext.current
-    val userData by viewModel.userData2
+    val userData by viewModel.userData
     val isLoading by viewModel.isLoading
     val requestPermissionLauncher =
         rememberLauncherForActivityResult(

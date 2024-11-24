@@ -28,7 +28,6 @@ fun LoginScreen(
     viewModel: RejsekortViewmodel,
     navigation: () -> Unit
 ) {
-    val userData by viewModel.userData.collectAsStateWithLifecycle()
     Box(
         modifier = Modifier
             .fillMaxSize()

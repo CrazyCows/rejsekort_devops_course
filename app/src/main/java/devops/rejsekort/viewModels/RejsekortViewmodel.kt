@@ -31,14 +31,14 @@ class RejsekortViewmodel: ViewModel() {
     private lateinit var lastLocation: devops.rejsekort.data.Location
     private val repo = CheckInOutRepository()
 
-    val userData2 = mutableStateOf(UserData())
+    val userData = mutableStateOf(UserData())
     val isLoading = mutableStateOf(false)
 
 
     private fun updateCheckedIn() {
         CoroutineScope(Dispatchers.IO).launch {
-            val newCheckInStatus = repo.getCheckInStatus(userData2.value)
-            userData2.value = userData2.value.copy(isCheckedIn = newCheckInStatus)
+            val newCheckInStatus = repo.getCheckInStatus(userData.value)
+            userData.value = userData.value.copy(isCheckedIn = newCheckInStatus)
         }
     }
 
@@ -110,7 +110,7 @@ class RejsekortViewmodel: ViewModel() {
 
 
     private fun setUserData(firstName: String?, lastName: String? ,userToken: String) {
-        userData2.value = userData2.value.copy(firstName = firstName, lastName = lastName, token = userToken)
+        userData.value = userData.value.copy(firstName = firstName, lastName = lastName, token = userToken)
     }
 
     fun handleCheckInOut(context: Context) {
@@ -126,7 +126,7 @@ class RejsekortViewmodel: ViewModel() {
                 withContext(Dispatchers.Main){
 
                     if (result) { //I should not be legally allowed to concatenate strings like this
-                        Toast.makeText(context, "Checked " + if(userData2.value.isCheckedIn) {"out"} else{"in"} + " at: " + lastLocation.latitude + ", " + lastLocation.longitude, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Checked " + if(userData.value.isCheckedIn) {"out"} else{"in"} + " at: " + lastLocation.latitude + ", " + lastLocation.longitude, Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
                     }
@@ -180,7 +180,7 @@ class RejsekortViewmodel: ViewModel() {
                 longitude = location.longitude,
             )
             lastLocation = loc
-            val success = repo.sendEvent(userData2.value, lastLocation)
+            val success = repo.sendEvent(userData.value, lastLocation)
             if (success) {
                 updateCheckedIn()
                 return true
