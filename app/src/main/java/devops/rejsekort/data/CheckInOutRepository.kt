@@ -61,8 +61,7 @@ class CheckInOutRepository (
         }
         Log.i("CheckInStatus",status.toString())
         if (status.status.isSuccess()) {
-            //TODO: Confirm Data format of response
-            return status.bodyAsBytes().toString().contains("true")
+            return true
         }
         return false
     }
