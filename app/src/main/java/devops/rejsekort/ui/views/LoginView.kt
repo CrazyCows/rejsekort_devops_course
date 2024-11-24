@@ -10,12 +10,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import devops.rejsekort.viewModels.RejsekortViewmodel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +28,7 @@ fun LoginScreen(
     viewModel: RejsekortViewmodel,
     navigation: () -> Unit
 ) {
+    val userData by viewModel.userData.collectAsStateWithLifecycle()
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -60,7 +63,9 @@ fun LoginScreen(
                         .fillMaxWidth(0.75f)
                         .height(75.dp),
                     colors = ButtonDefaults.buttonColors()
-                ) { Text(text = "login", fontSize = 30.sp) }
+                ) {
+                    Text(text = (if(userData.isCheckedIn)"Check ud" else "Check ind"), fontSize = 30.sp)
+                }
             }
         }
     }
