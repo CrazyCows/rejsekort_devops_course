@@ -32,6 +32,7 @@ class RejsekortViewmodel: ViewModel() {
     private val repo = CheckInOutRepository()
 
     val userData2 = mutableStateOf(UserData())
+    val isLoading = mutableStateOf(false)
 
 
     private fun updateCheckedIn() {
@@ -114,7 +115,6 @@ class RejsekortViewmodel: ViewModel() {
 
     fun handleCheckInOut(context: Context) {
         if (checkFineLocationAccess(context)) {
-            Log.i("handleCheckInOut", "I also need to run once per click with perimissions")
             val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
                 Toast.makeText(
                     context,"Unable to connect to server",Toast.LENGTH_SHORT
@@ -124,11 +124,13 @@ class RejsekortViewmodel: ViewModel() {
             CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
                  val result = sendEventToBackend(context)
                 withContext(Dispatchers.Main){
+
                     if (result) { //I should not be legally allowed to concatenate strings like this
                         Toast.makeText(context, "Checked " + if(userData2.value.isCheckedIn) {"out"} else{"in"} + " at: " + lastLocation.latitude + ", " + lastLocation.longitude, Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
                     }
+                    isLoading.value = false
                 }
             }
         } else {

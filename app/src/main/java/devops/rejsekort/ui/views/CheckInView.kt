@@ -12,8 +12,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,6 +39,7 @@ fun CheckInOutScreen(
 
     val context = LocalContext.current
     val userData by viewModel.userData2
+    val isLoading by viewModel.isLoading
     val requestPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
@@ -62,6 +66,16 @@ fun CheckInOutScreen(
                 fontSize = 50.sp
             )
         }
+        if(isLoading){
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .width(64.dp)
+                    .align(Alignment.Center)
+                    .padding(10.dp),
+                color = MaterialTheme.colorScheme.secondary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            )
+        }
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -70,9 +84,10 @@ fun CheckInOutScreen(
         ) {
 
             Button(
+                enabled = !isLoading,
                 onClick = {
+                    viewModel.isLoading.value = true
                     if(viewModel.checkFineLocationAccess(context)){
-                        Log.i("Button clicked", "I need to run once per click which has location permissions")
                         viewModel.handleCheckInOut(context)
                     } else {
                         requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION) //launches handleCheckInOut
