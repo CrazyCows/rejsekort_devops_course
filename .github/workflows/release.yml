@@ -1,15 +1,12 @@
-name: Generate Debug APK
+name: Generate Debug APK on Release
 
 env:
   main_project_module: app
 
 on:
-
-  push:
-    branches:
-      - 'release/**'
-
-  workflow_dispatch:
+  release:
+    types:
+      - created
 
 jobs:
   build:
