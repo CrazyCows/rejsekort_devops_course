@@ -109,7 +109,7 @@ class RejsekortViewmodel: ViewModel() {
     }
 
 
-    private fun setUserData(firstName: String?, lastName: String? ,userToken: String) {
+    fun setUserData(firstName: String?, lastName: String? ,userToken: String) {
         userData.value = userData.value.copy(firstName = firstName, lastName = lastName, token = userToken)
     }
 
