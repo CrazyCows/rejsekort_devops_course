@@ -26,19 +26,32 @@ jobs:
 
       - name: Build APK with Gradle
         run: ./gradlew assembleRelease
-        
-      - name: Upload APK to release
-        uses: actions/upload-artifact@v3
-        with:
-          name: app-release.apk
-          path: app/build/outputs/apk/release/app-release-unsigned.apk
 
-      - name: Attach APK to GitHub release
+      - name: Sign APK
+        env:
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE" | base64 -d > keystore.jks
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+            -keystore keystore.jks \
+            -storepass $STORE_PASSWORD \
+            -keypass $KEY_PASSWORD \
+            app/build/outputs/apk/release/app-release-unsigned.apk \
+            $KEY_ALIAS
+
+      - name: Align APK
+        run: |
+          $ANDROID_HOME/build-tools/<build-tools-version>/zipalign -v 4 \
+            app/build/outputs/apk/release/app-release-unsigned.apk \
+            app/build/outputs/apk/release/app-release-signed.apk
+
+      - name: Upload Signed APK to release
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: app/build/outputs/apk/release/app-release-unsigned.apk
+          asset_path: app/build/outputs/apk/release/app-release-signed.apk
           asset_name: app-release.apk
           asset_content_type: application/vnd.android.package-archive
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
