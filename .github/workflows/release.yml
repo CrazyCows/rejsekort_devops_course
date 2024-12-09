@@ -27,15 +27,19 @@ jobs:
       - name: Build APK with Gradle
         run: ./gradlew assembleRelease
 
-      - name: Determine Latest Build Tools Version
-        id: get-build-tools-version
-        run: echo "LATEST_BUILD_TOOLS=$(ls -t $ANDROID_HOME/build-tools | head -n 1)" >> $GITHUB_ENV
-
-      - name: Align APK
-        run: |
-          $ANDROID_HOME/build-tools/$LATEST_BUILD_TOOLS/zipalign -v 4 \
-            app/build/outputs/apk/release/app-release-unsigned.apk \
-            app/build/outputs/apk/release/app-release-signed.apk
+      - uses: r0adkll/sign-android-release@v1
+        name: Sign app APK
+         # ID used to access action output
+        id: sign_app
+        with:
+          releaseDirectory: app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          # override default build-tools version (33.0.0) -- optional
+          BUILD_TOOLS_VERSION: "34.0.0"
 
       - name: Upload Signed APK to release
         uses: actions/upload-release-asset@v1
