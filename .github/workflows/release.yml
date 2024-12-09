@@ -27,23 +27,12 @@ jobs:
       - name: Build APK with Gradle
         run: ./gradlew assembleRelease
 
-      - name: Generate Temporary Keystore
-        run: |
-          keytool -genkeypair -v -keystore temp-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass tempstorepass -keypass tempkeypass -alias tempkey -dname "CN=Temporary, OU=Temporary, O=Temporary, L=Temporary, S=Temporary, C=US"
-
-      - name: Sign APK with Temporary Keystore
-        run: |
-          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-            -keystore temp-keystore.jks \
-            -storepass tempstorepass \
-            -keypass tempkeypass \
-            app/build/outputs/apk/release/app-release-unsigned.apk \
-            tempkey
+      - name: List Installed Build Tools
+        run: ls $ANDROID_HOME/build-tools/
 
       - name: Align APK
         run: |
-          $ANDROID_HOME/build-tools/<build-tools-version>/zipalign -v 4 \
+          $ANDROID_HOME/build-tools/<replace-with-version>/zipalign -v 4 \
             app/build/outputs/apk/release/app-release-unsigned.apk \
             app/build/outputs/apk/release/app-release-signed.apk
 
