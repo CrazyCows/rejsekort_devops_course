@@ -7,6 +7,16 @@ android {
     namespace = "devops.rejsekort"
     compileSdk = 35
 
+    signingConfigs {
+        create("release") {
+            if (findProperty("RELEASE_STORE_FILE") != null) {
+                storeFile = file(findProperty("RELEASE_STORE_FILE") as String)
+                storePassword = findProperty("RELEASE_STORE_PASSWORD") as String?
+                keyAlias = findProperty("RELEASE_KEY_ALIAS") as String?
+                keyPassword = findProperty("RELEASE_KEY_PASSWORD") as String?
+            }
+        }
+    }
     defaultConfig {
         applicationId = "devops.rejsekort"
         minSdk = 33
@@ -22,6 +32,9 @@ android {
 
     buildTypes {
         release {
+            if (findProperty("RELEASE_STORE_FILE") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
