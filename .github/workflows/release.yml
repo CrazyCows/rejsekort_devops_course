@@ -27,20 +27,19 @@ jobs:
       - name: Build APK with Gradle
         run: ./gradlew assembleRelease
 
-      - name: Sign APK
-        env:
-          KEYSTORE: ${{ secrets.KEYSTORE }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      - name: Generate Temporary Keystore
         run: |
-          echo "$KEYSTORE" | base64 -d > keystore.jks
+          keytool -genkeypair -v -keystore temp-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass tempstorepass -keypass tempkeypass -alias tempkey -dname "CN=Temporary, OU=Temporary, O=Temporary, L=Temporary, S=Temporary, C=US"
+
+      - name: Sign APK with Temporary Keystore
+        run: |
           jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-            -keystore keystore.jks \
-            -storepass $STORE_PASSWORD \
-            -keypass $KEY_PASSWORD \
+            -keystore temp-keystore.jks \
+            -storepass tempstorepass \
+            -keypass tempkeypass \
             app/build/outputs/apk/release/app-release-unsigned.apk \
-            $KEY_ALIAS
+            tempkey
 
       - name: Align APK
         run: |
