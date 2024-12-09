@@ -27,12 +27,13 @@ jobs:
       - name: Build APK with Gradle
         run: ./gradlew assembleRelease
 
-      - name: List Installed Build Tools
-        run: ls $ANDROID_HOME/build-tools/
+      - name: Determine Latest Build Tools Version
+        id: get-build-tools-version
+        run: echo "LATEST_BUILD_TOOLS=$(ls -t $ANDROID_HOME/build-tools | head -n 1)" >> $GITHUB_ENV
 
       - name: Align APK
         run: |
-          $ANDROID_HOME/build-tools/<35.0.0>/zipalign -v 4 \
+          $ANDROID_HOME/build-tools/$LATEST_BUILD_TOOLS/zipalign -v 4 \
             app/build/outputs/apk/release/app-release-unsigned.apk \
             app/build/outputs/apk/release/app-release-signed.apk
 
